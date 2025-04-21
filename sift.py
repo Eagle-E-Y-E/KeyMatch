@@ -459,8 +459,8 @@ def match_descriptors(img1, kp1, des1, img2, kp2, des2,
 
 if __name__ == "__main__":
     # Dummy image for testing
-    img1 = cv2.imread('Data/sift_testing/box_in_scene.jpg', cv2.IMREAD_GRAYSCALE)
-    img2 = cv2.imread('Data/sift_testing/box.jpg', cv2.IMREAD_GRAYSCALE)
+    img1 = cv2.imread('Data/sift_testing/meta.jpg', cv2.IMREAD_GRAYSCALE)
+    img2 = cv2.imread('Data/sift_testing/tech.jpg', cv2.IMREAD_GRAYSCALE)
 
     # 1) Extract your keypoints+descriptors
     kp1, des1 = computeKeypointsAndDescriptors(img1)

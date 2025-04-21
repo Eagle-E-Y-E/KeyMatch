@@ -1,38 +1,37 @@
+import numpy as np
 from PyQt5 import uic
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 import sys
 import time
 import cv2
 from utils import load_pixmap_to_label, display_image_Graphics_scene, enforce_slider_step
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QLabel, QFileDialog
-from PyQt5.QtCore import QTimer
-
 from Harris import Harris
+from ImageMatcher import ImageMatcher
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.scored_image = None
         uic.loadUi('ui.ui', self)
+        self.matcher = ImageMatcher()
+        self.matcher_image = None
+        self.template = None
 
-        # input images
         self.input_img1.mouseDoubleClickEvent = lambda event: self.doubleClickHandler(
             event, self.input_img1)
         self.input_img2.mouseDoubleClickEvent = lambda event: self.doubleClickHandler(
             event, self.input_img2)
-
+        print(self.input_img1)
         # output images
         # output_img1_GV ==> graphics view
         # output_img2_GV ==> graphics view
 
         # slider
         self.threshold_slider.valueChanged.connect(
-            lambda: self.threshold_label.setText(f"{self.threshold_slider.value()}"))
-
-        # button
-        # self.button
+            lambda: self.threshold_label.setText(f"{self.threshold_slider.value() / 100}"))
+        self.threshold_slider.valueChanged.connect(self.update_output)
+        self.calculate.clicked.connect(self.run_matching)
 
         # mode
         # self.mode_combo
@@ -48,13 +47,12 @@ class MainWindow(QMainWindow):
 
         # Harris slider
         self.k_slider.valueChanged.connect(
-            lambda: self.K_label.setText(f"{self.k_slider.value()/1000}"))
+            lambda: self.K_label.setText(f"{self.k_slider.value() / 1000}"))
         # range for slider from 40 to 60 so real value is /1000
 
         self.Harris_threshold_slider.valueChanged.connect(
-            lambda: self.Harris_threshold_label.setText(f"{self.Harris_threshold_slider.value()/1000}"))
+            lambda: self.Harris_threshold_label.setText(f"{self.Harris_threshold_slider.value() / 1000}"))
         # range for slider from 5 to 50 so real value is /1000
-        
 
         self.Window_size_slider.valueChanged.connect(
             lambda: self.Window_size_label.setText(f"{self.Window_size_slider.value()}"))
@@ -88,6 +86,11 @@ class MainWindow(QMainWindow):
 
     def doubleClickHandler(self, event, widget):
         self.img_path = load_pixmap_to_label(widget)
+        if widget == self.input_img1:
+            self.matcher_image = cv2.imread(self.img_path, cv2.IMREAD_GRAYSCALE)
+            self.colored_image = cv2.imread(self.img_path)
+        elif widget == self.input_img2:
+            self.template = cv2.imread(self.img_path, cv2.IMREAD_GRAYSCALE)
 
     def processHarrisImage(self):
         # Check if an image has been loaded
@@ -105,7 +108,7 @@ class MainWindow(QMainWindow):
 
         # Get parameters from your sliders:
         k = self.k_slider.value() / 1000.0
-        window_size = self.Window_size_slider.value() 
+        window_size = self.Window_size_slider.value()
         threshold_ratio = self.Harris_threshold_slider.value() / 1000.0
 
         # Run Harris Corner Detection:
@@ -119,7 +122,8 @@ class MainWindow(QMainWindow):
         # Run Lambda-min corner detection:
         start_lambda = time.perf_counter()
         lambda_response = Harris.compute_lambda_response(gray_image, window_size=window_size)
-        corners_lambda = Harris.get_corner_points(lambda_response, threshold_ratio=threshold_ratio, window_size=window_size)
+        corners_lambda = Harris.get_corner_points(lambda_response, threshold_ratio=threshold_ratio,
+                                                  window_size=window_size)
         end_lambda = time.perf_counter()
         print(f"Lambda-min operator computation time: {end_lambda - start_lambda:.4f} seconds")
         print(f"Number of Lambda-min corners: {len(corners_lambda)}")
@@ -131,7 +135,50 @@ class MainWindow(QMainWindow):
         display_image_Graphics_scene(self.Harris_output_img1_GV, output_harris)
         display_image_Graphics_scene(self.Harris_output_img2_GV, output_lambda)
         self.Harris_input_label.setText(f"Harris operator computation time: {end_harris - start_harris:.4f} seconds")
-        self.Harris_outpu_label.setText(f"Lambda-min operator computation time: {end_lambda - start_lambda:.4f} seconds")
+        self.Harris_outpu_label.setText(
+            f"Lambda-min operator computation time: {end_lambda - start_lambda:.4f} seconds")
+
+    def SSD(self, image, template):
+        self.scored_image = self.matcher.ssd_matcher(image, template)
+        display_image_Graphics_scene(self.output_img1_GV, self.scored_image)
+
+    def NCC(self, image, template):
+        self.scored_image = self.matcher.ncc_matcher(image, template)
+        display_image_Graphics_scene(self.output_img1_GV, self.scored_image)
+
+    def run_matching(self):
+        if self.matcher_image is not None and self.template is not None:
+            method = self.mode_combo.currentText()
+            if method == 'SSD':
+                self.threshold_slider.setValue(0)
+                self.SSD(self.matcher_image, self.template)
+            elif method == 'NCC':
+                self.threshold_slider.setValue(100)
+                self.NCC(self.matcher_image, self.template)
+            self.update_output()
+
+    def update_output(self):
+
+        threshold = self.threshold_slider.value() / 100
+        is_ssd = self.mode_combo.currentText() == 'SSD'
+        thresholded_scored_image = np.where(
+            self.scored_image < threshold if is_ssd else self.scored_image > threshold, 255, 0).astype(np.uint8)
+        display_image_Graphics_scene(self.output_img1_GV, thresholded_scored_image)
+        marked_image = self.marker(self.matcher_image, self.scored_image, self.template.shape, threshold)
+        display_image_Graphics_scene(self.output_img2_GV, marked_image)
+
+    def marker(self, image, output_image, template_shape, threshold):
+        marked_image = self.colored_image.copy()
+        tmpl_h, tmpl_w = template_shape
+        match_locations = np.argwhere(
+            output_image < threshold) if self.mode_combo.currentText() == 'SSD' else np.argwhere(
+            output_image > threshold)
+        for y, x in match_locations:
+            top_left = (x, y)
+            bottom_right = (x + tmpl_w, y + tmpl_h)
+            cv2.rectangle(marked_image, top_left, bottom_right, (255, 0, 0), 2)
+        return marked_image
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
