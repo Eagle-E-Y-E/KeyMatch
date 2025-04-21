@@ -2021,19 +2021,6 @@ QGroupBox::title {
                     </property>
                    </widget>
                   </item>
-                  <item>
-                   <widget class="QLabel" name="Harris_input_label">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="text">
-                     <string>time: </string>
-                    </property>
-                   </widget>
-                  </item>
                  </layout>
                 </widget>
                </item>
@@ -2111,6 +2098,19 @@ QGroupBox::title {
                     </property>
                     <property name="frameShadow">
                      <enum>QFrame::Sunken</enum>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="Harris_input_label">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="text">
+                     <string>time: </string>
                     </property>
                    </widget>
                   </item>
