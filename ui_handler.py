@@ -158,7 +158,8 @@ class MainWindow(QMainWindow):
             self.update_output()
 
     def update_output(self):
-
+        if self.scored_image is None:
+            return
         threshold = self.threshold_slider.value() / 100
         is_ssd = self.mode_combo.currentText() == 'SSD'
         thresholded_scored_image = np.where(
