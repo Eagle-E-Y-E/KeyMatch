@@ -56,3 +56,19 @@ def convert_cv_to_pixmap(cv_img):
 ## # Display the edge image in filteroutput1
 ##    self.display_image_to_graphics_view(self.filteroutput1, edges)
 ##    edges should be the image returned from the canny function
+
+
+
+def enforce_slider_step(slider, step, min_value):
+    """
+    Enforce a slider to snap to specific steps.
+
+    Args:
+        slider (QSlider): The slider to enforce steps on.
+        step (int): The step size (e.g., 2 for increments of 2).
+        min_value (int): The minimum value of the slider.
+    """
+    value = slider.value()
+    if (value - min_value) % step != 0:
+        corrected_value = round((value - min_value) / step) * step + min_value
+        slider.setValue(corrected_value)
