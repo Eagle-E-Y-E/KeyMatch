@@ -2115,19 +2115,6 @@ QGroupBox::title {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QGraphicsView" name="Harris_output_img2_GV">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::WinPanel</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
                    <widget class="QLabel" name="Harris_outpu_label">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -2137,6 +2124,19 @@ QGroupBox::title {
                     </property>
                     <property name="text">
                      <string>time:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGraphicsView" name="Harris_output_img2_GV">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="frameShape">
+                     <enum>QFrame::WinPanel</enum>
                     </property>
                    </widget>
                   </item>
