@@ -509,7 +509,7 @@ border-radius: 5px;
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="button">
+               <widget class="QPushButton" name="calculate">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -521,7 +521,7 @@ border-radius: 5px;
 border-color: rgb(0, 0, 127);</string>
                 </property>
                 <property name="text">
-                 <string>button</string>
+                 <string>Calculate</string>
                 </property>
                </widget>
               </item>
