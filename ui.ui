@@ -377,6 +377,9 @@ QScrollBar::right-arrow:horizontal {
     </item>
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
       <property name="styleSheet">
        <string notr="true">color: rgb(255, 255, 255);</string>
       </property>
@@ -487,12 +490,6 @@ border-radius: 5px;
                    <layout class="QHBoxLayout" name="horizontalLayout_2">
                     <item>
                      <widget class="QSlider" name="threshold_slider">
-                      <property name="minimum">
-                       <number>0</number>
-                      </property>
-                      <property name="maximum">
-                       <number>100</number>
-                      </property>
                       <property name="orientation">
                        <enum>Qt::Horizontal</enum>
                       </property>
@@ -512,7 +509,7 @@ border-radius: 5px;
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="calculate">
+               <widget class="QPushButton" name="button">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -524,7 +521,7 @@ border-radius: 5px;
 border-color: rgb(0, 0, 127);</string>
                 </property>
                 <property name="text">
-                 <string>Calculate</string>
+                 <string>button</string>
                 </property>
                </widget>
               </item>
