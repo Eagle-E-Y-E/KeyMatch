@@ -48,7 +48,10 @@ class MainWindow(QMainWindow):
         # range for slider from 40 to 60 so real value is /1000
 
         self.Harris_threshold_slider.valueChanged.connect(
-            lambda: self.Harris_threshold_label.setText(f"{self.Harris_threshold_slider.value()}"))
+            lambda: self.Harris_threshold_label.setText(f"{self.Harris_threshold_slider.value()/1000}"))
+        # range for slider from 5 to 50 so real value is /1000
+        
+
         self.Window_size_slider.valueChanged.connect(
             lambda: self.Window_size_label.setText(f"{self.Window_size_slider.value()}"))
         self.Window_size_slider.valueChanged.connect(

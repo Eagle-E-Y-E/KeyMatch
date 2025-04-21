@@ -381,7 +381,7 @@ QScrollBar::right-arrow:horizontal {
        <string notr="true">color: rgb(255, 255, 255);</string>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -1294,6 +1294,15 @@ border-radius: 5px;
                    <layout class="QHBoxLayout" name="horizontalLayout_6">
                     <item>
                      <widget class="QSlider" name="k_slider">
+                      <property name="minimum">
+                       <number>40</number>
+                      </property>
+                      <property name="maximum">
+                       <number>60</number>
+                      </property>
+                      <property name="value">
+                       <number>40</number>
+                      </property>
                       <property name="orientation">
                        <enum>Qt::Horizontal</enum>
                       </property>
@@ -1302,7 +1311,7 @@ border-radius: 5px;
                     <item>
                      <widget class="QLabel" name="K_label">
                       <property name="text">
-                       <string>0</string>
+                       <string>0.04</string>
                       </property>
                      </widget>
                     </item>
@@ -1339,6 +1348,12 @@ border-radius: 5px;
                    <layout class="QHBoxLayout" name="horizontalLayout_8">
                     <item>
                      <widget class="QSlider" name="Harris_threshold_slider">
+                      <property name="minimum">
+                       <number>5</number>
+                      </property>
+                      <property name="maximum">
+                       <number>50</number>
+                      </property>
                       <property name="orientation">
                        <enum>Qt::Horizontal</enum>
                       </property>
@@ -1347,7 +1362,7 @@ border-radius: 5px;
                     <item>
                      <widget class="QLabel" name="Harris_threshold_label">
                       <property name="text">
-                       <string>0</string>
+                       <string>0.005</string>
                       </property>
                      </widget>
                     </item>
