@@ -106,11 +106,18 @@ class Harris:
                     eigen1 = trace / 2 + sqrt_val
                     eigen2 = trace / 2 - sqrt_val
                 lambda_min[i, j] = min(eigen1, eigen2)
+
+
+                # M = np.array([[Sxx, Sxy],
+                #              [Sxy, Syy]])
+
+                # eigenvalues, _ = np.linalg.eig(M)
+                # lambda_min[i, j] = np.min(eigenvalues)
                 
         return lambda_min
 
     @staticmethod
-    def get_corner_points(response, threshold_ratio=0.01):
+    def get_corner_points(response, threshold_ratio=0.01, window_size=3):
         """
         Given a response image (Harris or minimum eigenvalue),
         threshold it by a ratio of the maximum value then perform
@@ -121,11 +128,10 @@ class Harris:
         threshold = threshold_ratio * np.max(response)
         points = []
         rows, cols = response.shape
-        offset = 1  # for a 3x3 neighborhood
+        offset = window_size // 2 # Half window size for non-maximum suppression
         for i in range(offset, rows - offset):
             for j in range(offset, cols - offset):
                 if response[i, j] > threshold:
-                    # Check if this value is the maximum in its 3x3 neighborhood
                     local_patch = response[i-offset:i+offset+1, j-offset:j+offset+1]
                     if response[i, j] == np.max(local_patch):
                         points.append((j, i))  # (x, y) format for cv2.circle

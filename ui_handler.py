@@ -1,11 +1,15 @@
 from PyQt5 import uic
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 import sys
+import time
+import cv2
 from utils import load_pixmap_to_label, display_image_Graphics_scene, enforce_slider_step
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QLabel, QFileDialog
 from PyQt5.QtCore import QTimer
+
+from Harris import Harris
 
 
 class MainWindow(QMainWindow):
@@ -64,6 +68,7 @@ class MainWindow(QMainWindow):
 
         # Harris button
         # button_2
+        self.button_2.clicked.connect(self.processHarrisImage)
 
     def enforceWindowSizeSliderStep(self):
         value = self.Window_size_slider.value()
@@ -74,6 +79,49 @@ class MainWindow(QMainWindow):
     def doubleClickHandler(self, event, widget):
         self.img_path = load_pixmap_to_label(widget)
 
+    def processHarrisImage(self):
+        # Check if an image has been loaded
+        if self.img_path is None:
+            QMessageBox.warning(self, "No Image", "Please load an image first by double-clicking on the input widget.")
+            return
+
+        # Read the image using OpenCV:
+        img = cv2.imread(self.img_path)
+        if img is None:
+            QMessageBox.critical(self, "Error", f"Image not found at {self.img_path}")
+            return
+
+        gray_image = Harris.manual_gray_conversion(img)
+
+        # Get parameters from your sliders:
+        k = self.k_slider.value() / 1000.0
+        window_size = self.Window_size_slider.value() 
+        threshold_ratio = self.Harris_threshold_slider.value() / 1000.0
+
+        # Run Harris Corner Detection:
+        start_harris = time.perf_counter()
+        R = Harris.compute_harris_response(gray_image, k=k, window_size=window_size)
+        corners_harris = Harris.get_corner_points(R, threshold_ratio=threshold_ratio, window_size=window_size)
+        end_harris = time.perf_counter()
+        print(f"Harris operator computation time: {end_harris - start_harris:.4f} seconds")
+        print(f"Number of Harris corners: {len(corners_harris)}")
+
+        # Run Lambda-min corner detection:
+        start_lambda = time.perf_counter()
+        lambda_response = Harris.compute_lambda_response(gray_image, window_size=window_size)
+        corners_lambda = Harris.get_corner_points(lambda_response, threshold_ratio=threshold_ratio, window_size=window_size)
+        end_lambda = time.perf_counter()
+        print(f"Lambda-min operator computation time: {end_lambda - start_lambda:.4f} seconds")
+        print(f"Number of Lambda-min corners: {len(corners_lambda)}")
+
+        # Mark corners on images:
+        output_harris = Harris.mark_corners_on_image(img.copy(), corners_harris, color=(0, 0, 255))
+        output_lambda = Harris.mark_corners_on_image(img.copy(), corners_lambda, color=(0, 255, 0))
+
+        display_image_Graphics_scene(self.Harris_output_img1_GV, output_harris)
+        display_image_Graphics_scene(self.Harris_output_img2_GV, output_lambda)
+        self.Harris_input_label.setText(f"Harris operator computation time: {end_harris - start_harris:.4f} seconds")
+        self.Harris_outpu_label.setText(f"Lambda-min operator computation time: {end_lambda - start_lambda:.4f} seconds")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
