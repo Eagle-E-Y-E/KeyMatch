@@ -70,6 +70,16 @@ class MainWindow(QMainWindow):
         # button_2
         self.button_2.clicked.connect(self.processHarrisImage)
 
+        # SIFT Tab_________________________________________________________________________
+        # input images SIFT
+        self.SIFT_input_img1.mouseDoubleClickEvent = lambda event: self.doubleClickHandler(
+            event, self.SIFT_input_img1)
+        self.SIFT_input_img2.mouseDoubleClickEvent = lambda event: self.doubleClickHandler(
+            event, self.SIFT_input_img2)
+        
+        # output images SIFT
+        # SIFT_output_img1_GV ==> graphics view 
+
     def enforceWindowSizeSliderStep(self):
         value = self.Window_size_slider.value()
         if value % 2 == 0:
