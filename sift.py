@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import ndimage
+from matplotlib import pyplot as plt
 import cv2
 from numpy import all, any, array, arctan2, cos, sin, exp, dot, log2, logical_and, roll, sqrt, stack, trace, unravel_index, pi, deg2rad, rad2deg, where, zeros, floor, full, nan, isnan, round, float32
 from numpy.linalg import det, lstsq, norm
@@ -87,7 +87,7 @@ def findKeypoints(gaussian_images, dog_images, num_intervals, sigma, image_borde
     return keypoints
 
 def isPixelAnExtremum(first_subimage, second_subimage, third_subimage, threshold):
-    #Return True if the center element of the 3x3x3 input array is strictly greater than or less than all its neighbors, False otherwise
+    #Return True if the center element of the 3x3x3 input array is strictly greater than or less than all its neighbors and the threshold, False otherwise
     
     center_pixel_value = second_subimage[1, 1]
     if abs(center_pixel_value) > threshold:
@@ -110,8 +110,8 @@ def isPixelAnExtremum(first_subimage, second_subimage, third_subimage, threshold
 def localizeExtremumViaQuadraticFit(i, j, image_index, octave_index, num_intervals, dog_images_in_octave, sigma, contrast_threshold, image_border_width, eigenvalue_ratio=10, num_attempts_until_convergence=5):
     #Iteratively refine pixel positions of scale-space extrema via quadratic fit around each extremum's neighbors
     
-    extremum_is_outside_image = False
     image_shape = dog_images_in_octave[0].shape
+    # Extract a 3×3×3 “pixel cube” around (i,j,scale)
     for attempt_index in range(num_attempts_until_convergence):
         # need to convert from uint8 to float32 to compute derivatives and need to rescale pixel values to [0, 1] to apply Lowe's thresholds
         first_image, second_image, third_image = dog_images_in_octave[image_index-1:image_index+2]
@@ -120,54 +120,62 @@ def localizeExtremumViaQuadraticFit(i, j, image_index, octave_index, num_interva
                             third_image[i-1:i+2, j-1:j+2]]).astype('float32') / 255.
         gradient = computeGradientAtCenterPixel(pixel_cube)
         hessian = computeHessianAtCenterPixel(pixel_cube)
+        # HΔ+∇D=0⟹Δ=−H^−1 ∇D
         extremum_update = -lstsq(hessian, gradient, rcond=None)[0]
-        if abs(extremum_update[0]) < 0.5 and abs(extremum_update[1]) < 0.5 and abs(extremum_update[2]) < 0.5:
+        # If the update is small in every dimension (<0.5), we’ve converged
+        if all(abs(extremum_update) < 0.5):
             break
-        j += int(round(extremum_update[0]))
-        i += int(round(extremum_update[1]))
-        image_index += int(round(extremum_update[2]))
+        # Otherwise, move our candidate by the *rounded* update
+        j += int(round(extremum_update[0]))  # x‑shift
+        i += int(round(extremum_update[1]))  # y‑shift
+        image_index += int(round(extremum_update[2]))  # scale‑shift
         # make sure the new pixel_cube will lie entirely within the image
         if i < image_border_width or i >= image_shape[0] - image_border_width or j < image_border_width or j >= image_shape[1] - image_border_width or image_index < 1 or image_index > num_intervals:
-            extremum_is_outside_image = True
-            break
-    if extremum_is_outside_image:    
-        return None
+            return None
+
     if attempt_index >= num_attempts_until_convergence - 1:    
         return None
-    functionValueAtUpdatedExtremum = pixel_cube[1, 1, 1] + 0.5 * dot(gradient, extremum_update)
+    
+    functionValueAtUpdatedExtremum = pixel_cube[1, 1, 1] + 0.5 * dot(gradient, extremum_update) # according to taylor expansion
     if abs(functionValueAtUpdatedExtremum) * num_intervals >= contrast_threshold:
         xy_hessian = hessian[:2, :2]
         xy_hessian_trace = trace(xy_hessian)
         xy_hessian_det = det(xy_hessian)
+        # eigenvalue ratio from Lowe's paper
         if xy_hessian_det > 0 and eigenvalue_ratio * (xy_hessian_trace ** 2) < ((eigenvalue_ratio + 1) ** 2) * xy_hessian_det:
             # Contrast check passed -- construct and return OpenCV KeyPoint object
+            # OpenCV convention
             keypoint = KeyPoint()
             keypoint.pt = ((j + extremum_update[0]) * (2 ** octave_index), (i + extremum_update[1]) * (2 ** octave_index))
+            # packing octave, layer, and sub‑layer shift into one uint32
             keypoint.octave = octave_index + image_index * (2 ** 8) + int(round((extremum_update[2] + 0.5) * 255)) * (2 ** 16)
-            keypoint.size = sigma * (2 ** ((image_index + extremum_update[2]) / float32(num_intervals))) * (2 ** (octave_index + 1))  # octave_index + 1 because the input image was doubled
+            keypoint.size = sigma * (2 ** ((image_index + extremum_update[2]) / float32(num_intervals))) * (2 ** (octave_index + 1))  # octave_index + 1 # account for doubling at input and halving per octave
             keypoint.response = abs(functionValueAtUpdatedExtremum)
             return keypoint, image_index
     return None
 
 def computeGradientAtCenterPixel(pixel_array):
-    #Approximate gradient at center pixel [1, 1, 1] of 3x3x3 array using central difference formula of order O(h^2), where h is the step size
-   
-    # With step size h, the central difference formula of order O(h^2) for f'(x) is (f(x + h) - f(x - h)) / (2 * h)
-    # Here h = 1, so the formula simplifies to f'(x) = (f(x + 1) - f(x - 1)) / 2
-    # NOTE: x corresponds to second array axis, y corresponds to first array axis, and s (scale) corresponds to third array axis
+    """ 
+    approximate gradient at center pixel [1, 1, 1] of 3x3x3 array using central difference formula of order O(h^2), where h is the step size
+    With step size h, the central difference formula of order O(h^2) for f'(x) is (f(x + h) - f(x - h)) / (2 * h)
+    Here h = 1, so the formula simplifies to f'(x) = (f(x + 1) - f(x - 1)) / 2
+    NOTE: x corresponds to second array axis, y corresponds to first array axis, and s (scale) corresponds to third array axis
+     """
     dx = 0.5 * (pixel_array[1, 1, 2] - pixel_array[1, 1, 0])
     dy = 0.5 * (pixel_array[1, 2, 1] - pixel_array[1, 0, 1])
     ds = 0.5 * (pixel_array[2, 1, 1] - pixel_array[0, 1, 1])
     return array([dx, dy, ds])
 
+# Eliminates low-contrast keypoints and edges
 def computeHessianAtCenterPixel(pixel_array):
-    #Approximate Hessian at center pixel [1, 1, 1] of 3x3x3 array using central difference formula of order O(h^2), where h is the step size
-   
-    # With step size h, the central difference formula of order O(h^2) for f''(x) is (f(x + h) - 2 * f(x) + f(x - h)) / (h ^ 2)
-    # Here h = 1, so the formula simplifies to f''(x) = f(x + 1) - 2 * f(x) + f(x - 1)
-    # With step size h, the central difference formula of order O(h^2) for (d^2) f(x, y) / (dx dy) = (f(x + h, y + h) - f(x + h, y - h) - f(x - h, y + h) + f(x - h, y - h)) / (4 * h ^ 2)
-    # Here h = 1, so the formula simplifies to (d^2) f(x, y) / (dx dy) = (f(x + 1, y + 1) - f(x + 1, y - 1) - f(x - 1, y + 1) + f(x - 1, y - 1)) / 4
-    # NOTE: x corresponds to second array axis, y corresponds to first array axis, and s (scale) corresponds to third array axis
+    """ 
+    Approximate Hessian at center pixel [1, 1, 1] of 3x3x3 array using central difference formula of order O(h^2), where h is the step size
+    With step size h, the central difference formula of order O(h^2) for f''(x) is (f(x + h) - 2 * f(x) + f(x - h)) / (h ^ 2)
+    Here h = 1, so the formula simplifies to f''(x) = f(x + 1) - 2 * f(x) + f(x - 1)
+    With step size h, the central difference formula of order O(h^2) for (d^2) f(x, y) / (dx dy) = (f(x + h, y + h) - f(x + h, y - h) - f(x - h, y + h) + f(x - h, y - h)) / (4 * h ^ 2)
+    Here h = 1, so the formula simplifies to (d^2) f(x, y) / (dx dy) = (f(x + 1, y + 1) - f(x + 1, y - 1) - f(x - 1, y + 1) + f(x - 1, y - 1)) / 4
+    NOTE: x corresponds to second array axis, y corresponds to first array axis, and s (scale) corresponds to third array axis
+    """
     center_pixel_value = pixel_array[1, 1, 1]
     dxx = pixel_array[1, 1, 2] - 2 * center_pixel_value + pixel_array[1, 1, 0]
     dyy = pixel_array[1, 2, 1] - 2 * center_pixel_value + pixel_array[1, 0, 1]
@@ -261,7 +269,7 @@ def removeDuplicateKeypoints(keypoints):
 
 
 def convertKeypointsToInputImageSize(keypoints):
-#    Convert keypoint point, size, and octave to input image size
+#    Convert keypoint point, size, and octave to input image size, before upsampling
    
     converted_keypoints = []
     for keypoint in keypoints:
@@ -282,7 +290,7 @@ def unpackOctave(keypoint):
     return octave, layer, scale
 
 def generateDescriptors(keypoints, gaussian_images, window_width=4, num_bins=8, scale_multiplier=3, descriptor_max_value=0.2):
-    # """Generate descriptors for each keypoint
+    # Generate descriptors for each keypoint
    
     descriptors = []
 
@@ -291,7 +299,6 @@ def generateDescriptors(keypoints, gaussian_images, window_width=4, num_bins=8, 
         gaussian_image = gaussian_images[octave + 1, layer]
         num_rows, num_cols = gaussian_image.shape
         point = round(scale * array(keypoint.pt)).astype('int')
-        bins_per_degree = num_bins / 360.
         angle = 360. - keypoint.angle
         cos_angle = cos(deg2rad(angle))
         sin_angle = sin(deg2rad(angle))
@@ -325,7 +332,7 @@ def generateDescriptors(keypoints, gaussian_images, window_width=4, num_bins=8, 
                         row_bin_list.append(row_bin)
                         col_bin_list.append(col_bin)
                         magnitude_list.append(weight * gradient_magnitude)
-                        orientation_bin_list.append((gradient_orientation - angle) * bins_per_degree)
+                        orientation_bin_list.append((gradient_orientation - angle) * num_bins / 360.)
 
         for row_bin, col_bin, magnitude, orientation_bin in zip(row_bin_list, col_bin_list, magnitude_list, orientation_bin_list):
             row_bin_floor, col_bin_floor, orientation_bin_floor = floor([row_bin, col_bin, orientation_bin]).astype(int)
@@ -391,9 +398,83 @@ def computeKeypointsAndDescriptors(image, sigma=1.6, num_intervals=3, assumed_bl
     return keypoints, descriptors
 
 
-# Example usage:
+import numpy as np
+import cv2
+
+def match_descriptors(img1, kp1, des1, img2, kp2, des2,
+                      matcher='FLANN',
+                      ratio_thresh=0.7,
+                      min_matches=10,
+                      draw_matches=False):
+    """
+    Match descriptors and optionally draw the matching keypoints.
+
+    Parameters
+    ----------
+    img1, img2 : np.ndarray
+        Original input images (grayscale).
+    kp1, des1 : keypoints and descriptors for image 1.
+    kp2, des2 : keypoints and descriptors for image 2.
+    matcher : {'FLANN', 'BF'}
+    ratio_thresh : float
+    min_matches : int
+    draw_matches : bool
+
+    Returns
+    -------
+    is_match : bool
+    good_matches : list of cv2.DMatch
+    match_img : np.ndarray or None
+    """
+    if matcher == 'FLANN':
+        FLANN_INDEX_KDTREE = 0
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+        search_params = dict(checks=50)
+        matcher_obj = cv2.FlannBasedMatcher(index_params, search_params)
+    else:
+        matcher_obj = cv2.BFMatcher(cv2.NORM_L2)
+
+    matches = matcher_obj.knnMatch(des1, des2, k=2)
+
+    good_matches = []
+    for m, n in matches:
+        if m.distance < ratio_thresh * n.distance:
+            good_matches.append(m)
+
+    is_match = len(good_matches) >= min_matches
+
+    match_img = None
+    if draw_matches:
+        match_img = cv2.drawMatches(
+            img1, kp1,
+            img2, kp2,
+            good_matches,
+            None,
+            flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
+        )
+
+    return is_match, good_matches, match_img
+
+
+
 if __name__ == "__main__":
     # Dummy image for testing
-    img = cv2.imread('images/pepsi_can.png', cv2.IMREAD_GRAYSCALE)
-    keypoints, descriptors = computeKeypointsAndDescriptors(img)
-    print(f"Found {len(keypoints)} keypoints with {len(descriptors)} descriptors.")
+    img1 = cv2.imread('Data/sift_testing/meta.jpg', cv2.IMREAD_GRAYSCALE)
+    img2 = cv2.imread('Data/sift_testing/tech.jpg', cv2.IMREAD_GRAYSCALE)
+
+    # 1) Extract your keypoints+descriptors
+    kp1, des1 = computeKeypointsAndDescriptors(img1)
+    kp2, des2 = computeKeypointsAndDescriptors(img2)
+
+    print(len(kp1), len(kp2))
+    # 2) Match and test
+    is_match, good_matches, match_vis = match_descriptors(
+        img1, kp1, des1, img2, kp2, des2, matcher='FLANN', ratio_thresh=0.7, min_matches=15, draw_matches=True
+    )
+
+    print(f"Match found? {is_match}, #good matches = {len(good_matches)}")
+
+    if match_vis is not None:
+        cv2.imshow('Matches', match_vis)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
