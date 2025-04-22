@@ -7,6 +7,7 @@ import cv2
 from utils import load_pixmap_to_label, display_image_Graphics_scene, enforce_slider_step
 from Harris import Harris
 from ImageMatcher import ImageMatcher
+import sift
 
 
 class MainWindow(QMainWindow):
