@@ -2250,14 +2250,14 @@ QGroupBox::title {
                      </sizepolicy>
                     </property>
                     <property name="text">
-                     <string>number of features: </string>
+                     <string>Number of Keypoints: </string>
                     </property>
                    </widget>
                   </item>
                   <item row="1" column="1">
                    <widget class="QLabel" name="num_features_img2">
                     <property name="text">
-                     <string>number of features: </string>
+                     <string>Number of Keypoints: </string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -2403,7 +2403,7 @@ QGroupBox::title {
                         </size>
                        </property>
                        <property name="text">
-                        <string>number of matches:</string>
+                        <string>Number of Matches:</string>
                        </property>
                        <property name="alignment">
                         <set>Qt::AlignCenter</set>

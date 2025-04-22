@@ -79,15 +79,10 @@ class MainWindow(QMainWindow):
         # output images SIFT
              # SIFT_output_img1_GV ==> graphics view 
 
+        self.handle_sift_status_label()
         # Match_btn
-            # self.match_btn
+        self.match_btn.clicked.connect(self.sift_match)
 
-        # Labels
-            # num_features_img1
-            # num_features_img2
-            # num_matches_label
-            # status_label
-        self.handle_sift_status_label('succes') #  handle after processing
 
     def doubleClickHandler(self, event, widget):
         self.img_path = load_pixmap_to_label(widget)
@@ -96,9 +91,13 @@ class MainWindow(QMainWindow):
             self.colored_image = cv2.imread(self.img_path)
         elif widget == self.input_img2:
             self.template = cv2.imread(self.img_path, cv2.IMREAD_GRAYSCALE)
+        elif widget == self.SIFT_input_img1:
+            self.sift_img1 = cv2.imread(self.img_path, cv2.IMREAD_GRAYSCALE)
+        elif widget == self.SIFT_input_img2:
+            self.sift_img2 = cv2.imread(self.img_path, cv2.IMREAD_GRAYSCALE)
 
-    def handle_sift_status_label(self, status):
-        if status == 'succes':
+    def handle_sift_status_label(self, status=None):
+        if status == 'success':
             self.status_label.setText("Succes, Match Found")
             self.status_label.setStyleSheet("color: green;")
         elif status == 'fail':
@@ -111,7 +110,7 @@ class MainWindow(QMainWindow):
     def processHarrisImage(self):
         # Check if an image has been loaded
         if self.img_path is None:
-            QMessageBox.warning(self, "No Image", "Please load an image first by double-clicking on the input widget.")
+            QMessageBox.warning(self, "No Image", "Double-click on the input widget to load an image")
             return
 
         # Read the image using OpenCV:
@@ -196,6 +195,28 @@ class MainWindow(QMainWindow):
             cv2.rectangle(marked_image, top_left, bottom_right, (255, 0, 0), 2)
         return marked_image
 
+    def sift_match(self):
+        if self.sift_img1 is None or self.sift_img2 is None:
+            QMessageBox.warning(self, "No Images", "Double-click on the input widgets to load images for matching")
+            return
+         # 1) Extract keypoints+descriptors
+        kp1, des1 = sift.computeKeypointsAndDescriptors(self.sift_img1)
+        kp2, des2 = sift.computeKeypointsAndDescriptors(self.sift_img2)
+
+        # 2) Match and test
+        is_match, good_matches, match_vis = sift.match_descriptors(
+            self.sift_img1, kp1, des1, self.sift_img2, kp2, des2, matcher='FLANN', ratio_thresh=0.7, min_matches=5, draw_matches=True
+        )
+
+        if match_vis is not None:
+            display_image_Graphics_scene(self.SIFT_output_img1_GV, match_vis)
+            # update labels
+            self.num_features_img1.setText(f'Number of Keypoints: {len(kp1)}')
+            self.num_features_img2.setText(f'Number of Keypoints: {len(kp2)}')
+            self.num_matches_label.setText(f'Number of Matches: {len(good_matches)}')
+            self.handle_sift_status_label('success' if is_match else 'fail') #  handle after processing
+
+            print(f"Match found? {is_match}, #good matches = {len(good_matches)}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

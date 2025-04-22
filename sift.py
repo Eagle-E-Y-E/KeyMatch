@@ -398,9 +398,6 @@ def computeKeypointsAndDescriptors(image, sigma=1.6, num_intervals=3, assumed_bl
     return keypoints, descriptors
 
 
-import numpy as np
-import cv2
-
 def match_descriptors(img1, kp1, des1, img2, kp2, des2,
                       matcher='FLANN',
                       ratio_thresh=0.7,
@@ -459,8 +456,8 @@ def match_descriptors(img1, kp1, des1, img2, kp2, des2,
 
 if __name__ == "__main__":
     # Dummy image for testing
-    img1 = cv2.imread('Data/sift_testing/meta.jpg', cv2.IMREAD_GRAYSCALE)
-    img2 = cv2.imread('Data/sift_testing/tech.jpg', cv2.IMREAD_GRAYSCALE)
+    img1 = cv2.imread('Data/sift_testing/tech.jpg', cv2.IMREAD_GRAYSCALE)
+    img2 = cv2.imread('Data/sift_testing/meta.jpg', cv2.IMREAD_GRAYSCALE)
 
     # 1) Extract your keypoints+descriptors
     kp1, des1 = computeKeypointsAndDescriptors(img1)
@@ -477,4 +474,5 @@ if __name__ == "__main__":
     if match_vis is not None:
         cv2.imshow('Matches', match_vis)
         cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows() 
+
