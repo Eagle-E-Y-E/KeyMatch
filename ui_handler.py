@@ -77,13 +77,17 @@ class MainWindow(QMainWindow):
             event, self.SIFT_input_img2)
         
         # output images SIFT
-        # SIFT_output_img1_GV ==> graphics view 
+             # SIFT_output_img1_GV ==> graphics view 
 
-    def enforceWindowSizeSliderStep(self):
-        value = self.Window_size_slider.value()
-        if value % 2 == 0:
-            corrected_value = round((value - 3) / 2) * 2 + 3
-            self.Window_size_slider.setValue(corrected_value)
+        # Match_btn
+            # self.match_btn
+
+        # Labels
+            # num_features_img1
+            # num_features_img2
+            # num_matches_label
+            # status_label
+        self.handle_sift_status_label('succes') #  handle after processing
 
     def doubleClickHandler(self, event, widget):
         self.img_path = load_pixmap_to_label(widget)
@@ -92,6 +96,17 @@ class MainWindow(QMainWindow):
             self.colored_image = cv2.imread(self.img_path)
         elif widget == self.input_img2:
             self.template = cv2.imread(self.img_path, cv2.IMREAD_GRAYSCALE)
+
+    def handle_sift_status_label(self, status):
+        if status == 'succes':
+            self.status_label.setText("Succes, Match Found")
+            self.status_label.setStyleSheet("color: green;")
+        elif status == 'fail':
+            self.status_label.setText("Fail, No Match Found")
+            self.status_label.setStyleSheet("color: red;")
+        else:
+            self.status_label.setText("status")
+            self.status_label.setStyleSheet("color: white;")
 
     def processHarrisImage(self):
         # Check if an image has been loaded
