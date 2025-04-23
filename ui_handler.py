@@ -161,7 +161,7 @@ class MainWindow(QMainWindow):
         display_image_Graphics_scene(self.output_img1_GV, self.scored_image)
         self.end_matching = time.perf_counter()
         print(f"SSD matching time: {self.end_matching - self.start_matching:.4f} seconds")
-        self.Ncc_time_label.setText(f"SSD computation time: {self.end_matching - self.end_matching:.4f} seconds")
+        self.Ncc_time_label.setText(f"SSD computation time: {self.end_matching - self.start_matching:.4f} seconds")
 
     def NCC(self, image, template):
         self.start_matching = time.perf_counter()
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow):
         display_image_Graphics_scene(self.output_img1_GV, self.scored_image)
         self.end_matching = time.perf_counter()
         print(f"NCC matching time: {self.end_matching - self.start_matching:.4f} seconds")
-        self.Ncc_time_label.setText(f"NCC computation time: {self.end_matching - self.end_matching:.4f} seconds")
+        self.Ncc_time_label.setText(f"NCC computation time: {self.end_matching - self.start_matching:.4f} seconds")
 
     def run_matching(self):
         if self.matcher_image is not None and self.template is not None:
@@ -221,6 +221,7 @@ class MainWindow(QMainWindow):
 
         end_sift = time.perf_counter()
         print(f"SIFT & matching computation time: {end_sift - start_sift :.4f} seconds")
+        self.sift_time_label.setText(f"time: {end_sift - start_sift:.4f} seconds")
 
         if match_vis is not None:
             display_image_Graphics_scene(self.SIFT_output_img1_GV, match_vis)
