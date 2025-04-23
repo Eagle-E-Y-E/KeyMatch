@@ -156,12 +156,20 @@ class MainWindow(QMainWindow):
             f"Lambda-min operator computation time: {end_lambda - start_lambda:.4f} seconds")
 
     def SSD(self, image, template):
+        self.start_matching = time.perf_counter()
         self.scored_image = self.matcher.ssd_matcher(image, template)
         display_image_Graphics_scene(self.output_img1_GV, self.scored_image)
+        self.end_matching = time.perf_counter()
+        print(f"SSD matching time: {self.end_matching - self.start_matching:.4f} seconds")
+        self.Ncc_time_label.setText(f"SSD computation time: {self.end_matching - self.end_matching:.4f} seconds")
 
     def NCC(self, image, template):
+        self.start_matching = time.perf_counter()
         self.scored_image = self.matcher.ncc_matcher(image, template)
         display_image_Graphics_scene(self.output_img1_GV, self.scored_image)
+        self.end_matching = time.perf_counter()
+        print(f"NCC matching time: {self.end_matching - self.start_matching:.4f} seconds")
+        self.Ncc_time_label.setText(f"NCC computation time: {self.end_matching - self.end_matching:.4f} seconds")
 
     def run_matching(self):
         if self.matcher_image is not None and self.template is not None:
@@ -184,6 +192,7 @@ class MainWindow(QMainWindow):
         display_image_Graphics_scene(self.output_img1_GV, thresholded_scored_image)
         marked_image = self.marker(self.matcher_image, self.scored_image, self.template.shape, threshold)
         display_image_Graphics_scene(self.output_img2_GV, marked_image)
+
 
     def marker(self, image, output_image, template_shape, threshold):
         marked_image = self.colored_image.copy()
