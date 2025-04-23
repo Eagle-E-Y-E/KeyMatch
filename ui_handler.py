@@ -28,6 +28,8 @@ class MainWindow(QMainWindow):
         # output_img1_GV ==> graphics view
         # output_img2_GV ==> graphics view
 
+        #Ncc_time_label
+
         # slider
         self.threshold_slider.valueChanged.connect(
             lambda: self.threshold_label.setText(f"{self.threshold_slider.value() / 100}"))

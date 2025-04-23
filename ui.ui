@@ -531,6 +531,13 @@ border-color: rgb(0, 0, 127);</string>
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QLabel" name="Ncc_time_label">
+                <property name="text">
+                 <string>time:</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
@@ -2250,14 +2257,14 @@ QGroupBox::title {
                      </sizepolicy>
                     </property>
                     <property name="text">
-                     <string>Number of Keypoints: </string>
+                     <string>number of features: </string>
                     </property>
                    </widget>
                   </item>
                   <item row="1" column="1">
                    <widget class="QLabel" name="num_features_img2">
                     <property name="text">
-                     <string>Number of Keypoints: </string>
+                     <string>number of features: </string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -2403,7 +2410,7 @@ QGroupBox::title {
                         </size>
                        </property>
                        <property name="text">
-                        <string>Number of Matches:</string>
+                        <string>number of matches:</string>
                        </property>
                        <property name="alignment">
                         <set>Qt::AlignCenter</set>
