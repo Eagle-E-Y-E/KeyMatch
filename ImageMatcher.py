@@ -12,6 +12,7 @@ class ImageMatcher(QWidget):
         super().__init__()
 
     def ssd_matcher(self, image, template):
+
         img_h, img_w = image.shape
         tmpl_h, tmpl_w = template.shape
         image = cv2.GaussianBlur(image, (11, 11), 0)
