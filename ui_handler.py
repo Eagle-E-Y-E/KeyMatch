@@ -127,7 +127,7 @@ class MainWindow(QMainWindow):
         threshold_ratio = self.Harris_threshold_slider.value() / 1000.0
 
         # Run Harris Corner Detection:
-        start_harris = time.perf_counter()
+        start_harris = time.perf_counter() 
         R = Harris.compute_harris_response(gray_image, k=k, window_size=window_size)
         corners_harris = Harris.get_corner_points(R, threshold_ratio=threshold_ratio, window_size=window_size)
         end_harris = time.perf_counter()
@@ -200,13 +200,16 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "No Images", "Double-click on the input widgets to load images for matching")
             return
          # 1) Extract keypoints+descriptors
+        start_sift = time.perf_counter()
         kp1, des1 = sift.computeKeypointsAndDescriptors(self.sift_img1)
         kp2, des2 = sift.computeKeypointsAndDescriptors(self.sift_img2)
-
         # 2) Match and test
         is_match, good_matches, match_vis = sift.match_descriptors(
             self.sift_img1, kp1, des1, self.sift_img2, kp2, des2, matcher='FLANN', ratio_thresh=0.7, min_matches=5, draw_matches=True
         )
+
+        end_sift = time.perf_counter()
+        print(f"SIFT & matching computation time: {end_sift - start_sift :.4f} seconds")
 
         if match_vis is not None:
             display_image_Graphics_scene(self.SIFT_output_img1_GV, match_vis)
